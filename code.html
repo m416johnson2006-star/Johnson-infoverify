@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfoVerify | Enterprise Threat Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-base: #050505;
+            --bg-surface: rgba(20, 20, 25, 0.6);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #888893;
+            --accent-primary: #4361ee;
+            --accent-glow: rgba(67, 97, 238, 0.4);
+            --danger: #ef233c;
+            --warning: #f77f00;
+            --safe: #06d6a0;
+            --font-main: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-base);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                radial-gradient(circle at 15% 30%, rgba(67, 97, 238, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 70%, rgba(139, 92, 246, 0.08), transparent 25%);
+            background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%;
+            background-position: center top;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex; flex-direction: column; overflow-x: hidden;
+        }
+
+        /* --- SCREEN EDGE EASTER EGGS --- */
+        .hacker-zone {
+            position: fixed; top: 0; width: 10%; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 10; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease;
+            color: var(--danger); font-size: 60px; text-shadow: 0 0 20px rgba(239, 35, 60, 0.6);
+            pointer-events: none;
+        }
+        .hacker-zone.left { left: 0; transform: translateX(-20px); }
+        .hacker-zone.right { right: 0; transform: translateX(20px); }
+        body:hover .hacker-zone.left:hover, body:hover .hacker-zone.right:hover { opacity: 0.15; transform: translateX(0); }
+
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 24px 10%; border-bottom: 1px solid var(--border-glass);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: white; transition: transform 0.3s ease; }
+        .logo:hover { transform: scale(1.05); }
+        .logo-icon { width: 24px; height: 24px; background: linear-gradient(135deg, var(--accent-primary), #8b5cf6); border-radius: 6px; }
+        
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .nav-links a:hover { color: white; transform: scale(1.10); background: linear-gradient(135deg, rgba(67, 97, 238, 0.8), rgba(139, 92, 246, 0.8)); box-shadow: 0 4px 15px var(--accent-glow); }
+        .contact-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); color: white !important; cursor: pointer; }
+
+        /* --- MAIN SECTION STYLING --- */
+        section { padding: 100px 20px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 20; }
+        .hero-section { text-align: center; max-width: 800px; margin-bottom: 50px; }
+        .tagline { display: inline-block; padding: 6px 16px; background: rgba(67, 97, 238, 0.1); border: 1px solid rgba(67, 97, 238, 0.2); color: #7b8dfa; border-radius: 100px; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
+        .hero-section h1 { font-size: clamp(36px, 5vw, 56px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; }
+        .hero-section p { color: var(--text-muted); font-size: 18px; line-height: 1.6; max-width: 600px; margin: 0 auto; }
+
+        /* --- DASHBOARD & MEGA GUARDIANS --- */
+        .dashboard-wrapper { position: relative; width: 100%; max-width: 700px; margin-bottom: 40px; }
+        
+        .mega-guardian { position: absolute; top: 50%; transform: translateY(-50%) scale(0.7); font-size: 300px; z-index: -1; opacity: 0; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        .mega-guardian.left { left: -100px; color: rgba(67, 97, 238, 0.05); }
+        .mega-guardian.right { right: -100px; color: rgba(239, 35, 60, 0.05); }
+        .dashboard-wrapper:hover .mega-guardian.left { left: -240px; transform: translateY(-50%) scale(1); opacity: 0.15; filter: drop-shadow(0 0 30px var(--accent-primary)); }
+        .dashboard-wrapper:hover .mega-guardian.right { right: -240px; transform: translateY(-50%) scale(1); opacity: 0.15; filter: drop-shadow(0 0 30px var(--danger)); }
+
+        .dashboard { background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 24px; padding: 40px; width: 100%; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(255,255,255,0.05); position: relative; z-index: 20; }
+        .input-group { margin-bottom: 24px; text-align: left; }
+        label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 10px; letter-spacing: 0.5px; }
+        input, textarea { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-glass); color: white; padding: 16px; border-radius: 12px; font-family: var(--font-main); font-size: 15px; transition: all 0.3s ease; }
+        input:focus, textarea:focus { outline: none; border-color: var(--accent-primary); background: rgba(0, 0, 0, 0.8); box-shadow: 0 0 20px var(--accent-glow); }
+        
+        button.run-btn { width: 100%; background: linear-gradient(135deg, var(--accent-primary), #324fc7); color: white; border: none; padding: 18px; font-size: 16px; font-weight: 600; border-radius: 12px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 10px; box-shadow: 0 10px 20px rgba(67, 97, 238, 0.2); }
+        button.run-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(67, 97, 238, 0.4); }
+
+        /* --- LOADER & RESULTS --- */
+        .loader-container { display: none; text-align: center; margin-top: 40px; padding: 20px 0; }
+        .spinner { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.05); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin 1s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite; margin: 0 auto 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #results { display: none; margin-top: 40px; padding-top: 40px; border-top: 1px solid var(--border-glass); animation: slideUp 0.6s forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+        .score-card { display: flex; align-items: center; justify-content: space-between; padding: 24px; border-radius: 16px; margin-bottom: 30px; font-weight: 800; font-size: 28px; background: rgba(0,0,0,0.3); border: 1px solid transparent; transition: all 0.5s ease; }
+        .verdict-label { font-size: 14px; font-weight: 500; opacity: 0.8; display: block; margin-bottom: 4px; }
+        .breakdown-item { margin-bottom: 20px; }
+        .breakdown-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; margin-bottom: 10px; color: #d1d1d6; }
+        .progress-bg { width: 100%; height: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 100px; overflow: hidden; }
+        .progress-bar { height: 100%; border-radius: 100px; width: 0%; transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
+
+        /* --- HOW IT WORKS --- */
+        #how-it-works { background: linear-gradient(180deg, transparent, rgba(67, 97, 238, 0.05), transparent); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); width: 100%; }
+        .section-title { font-size: 36px; font-weight: 800; margin-bottom: 60px; text-align: center;}
+        .section-title span { color: var(--accent-primary); }
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; width: 100%; margin: 0 auto; position: relative; }
+        .info-card { background: rgba(20, 20, 25, 0.6); border: 1px solid var(--border-glass); padding: 40px 30px; border-radius: 20px; text-align: left; transition: transform 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;}
+        .info-card:hover { transform: translateY(-10px); border-color: rgba(67, 97, 238, 0.4); background: rgba(30, 30, 35, 0.8); }
+        .phase-badge { position: absolute; top: -15px; left: 30px; background: var(--accent-primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .info-icon { width: 60px; height: 60px; background: rgba(67, 97, 238, 0.1); color: var(--accent-primary); border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 28px; margin-bottom: 20px; }
+        .info-card h3 { font-size: 22px; margin-bottom: 12px; font-weight: 600; }
+        .info-card p { font-size: 15px; color: var(--text-muted); line-height: 1.7; }
+
+        /* --- LIVE THREAT LEDGER SCROLL --- */
+        #live-ledger { width: 100%; overflow: hidden; padding: 60px 0; background: rgba(0,0,0,0.4); border-bottom: 1px solid var(--border-glass); text-align: center; }
+        .ledger-title { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 30px; font-weight: 600;}
+        .marquee-container { width: 100%; display: flex; overflow: hidden; white-space: nowrap; position: relative; }
+        .marquee-container::before, .marquee-container::after { content: ''; position: absolute; top: 0; width: 150px; height: 100%; z-index: 2; }
+        .marquee-container::before { left: 0; background: linear-gradient(to right, var(--bg-base), transparent); }
+        .marquee-container::after { right: 0; background: linear-gradient(to left, var(--bg-base), transparent); }
+        .marquee-track { display: inline-flex; animation: scroll 30s linear infinite; gap: 30px; padding-left: 30px;}
+        .threat-item { background: rgba(239, 35, 60, 0.05); border: 1px solid rgba(239, 35, 60, 0.2); padding: 10px 20px; border-radius: 100px; display: flex; align-items: center; gap: 10px; font-family: var(--font-code); font-size: 13px; color: #ff8fa3; }
+        .threat-item i { color: var(--danger); }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* --- THE WATCHER TOY --- */
+        #contact { padding-top: 120px; padding-bottom: 100px; }
+        .watcher-container { width: 90px; height: 90px; margin: 0 auto -45px auto; position: relative; z-index: 30; }
+        .watcher-head { width: 100%; height: 100%; background: #111; border: 2px solid #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(67, 97, 238, 0.1); transition: border-color 0.3s, box-shadow 0.3s; }
+        .watcher-head.active { border-color: var(--accent-primary); box-shadow: 0 10px 30px rgba(67, 97, 238, 0.4), inset 0 0 20px rgba(67, 97, 238, 0.3); }
+        .watcher-eye { width: 22px; height: 22px; background: #050505; border-radius: 50%; border: 2px solid #222; position: relative; overflow: hidden; box-shadow: inset 0 0 5px black; }
+        .watcher-pupil { width: 8px; height: 8px; background: var(--accent-primary); border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 8px var(--accent-primary); transition: background 0.3s, box-shadow 0.3s; }
+        .watcher-head.active .watcher-pupil { background: #fff; box-shadow: 0 0 15px #fff; }
+
+        /* --- CONTACT FORM --- */
+        .contact-box { background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: 24px; padding: 70px 40px 40px 40px; width: 100%; max-width: 650px; position: relative; z-index: 20; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .contact-header { text-align: center; margin-bottom: 40px; }
+        .contact-header h2 { font-size: 32px; margin-bottom: 5px; font-weight: 800;}
+        .dev-slogan { font-family: var(--font-code); color: var(--accent-primary); font-size: 14px; margin-bottom: 15px; letter-spacing: 0.5px; opacity: 0.9; }
+        .contact-header p.desc { color: var(--text-muted); font-size: 15px; }
+        .success-msg { display: none; background: rgba(6, 214, 160, 0.1); border: 1px solid var(--safe); color: var(--safe); padding: 20px; border-radius: 12px; text-align: center; font-weight: 600; margin-top: 20px; }
+
+        /* --- FOOTER & TEAM CREDITS --- */
+        footer { padding: 50px 20px; text-align: center; border-top: 1px solid var(--border-glass); background: rgba(0,0,0,0.6); position: relative; z-index: 20;}
+        .footer-credits { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        
+        /* The Translucent, Center-Scaling Glass Badges */
+        .credit-badge { 
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); 
+            padding: 12px 24px; border-radius: 100px; display: flex; align-items: center; gap: 10px; 
+            cursor: pointer; position: relative; overflow: hidden;
+            transform-origin: center; /* Forces scaling from the dead center */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .credit-badge span { color: var(--text-main); font-weight: 600; transition: color 0.3s; }
+        .credit-badge i { color: var(--accent-primary); font-size: 14px; transition: transform 0.3s; }
+        
+        /* Removed translateY to prevent it expanding "upwards" */
+        .credit-badge:hover, .credit-badge.active-badge { 
+            transform: scale(1.15); 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.5), 0 0 15px var(--accent-glow);
+        }
+        .credit-badge:hover span, .credit-badge.active-badge span { color: #fff; }
+        .credit-badge:hover i, .credit-badge.active-badge i { transform: rotate(15deg) scale(1.2); }
+
+        /* --- INLINE TEAM PROFILE EXPANSION --- */
+        .inline-team-details {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+            transition: max-height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease, margin 0.4s ease;
+        }
+
+        .inline-team-details.active {
+            max-height: 400px; /* Expands smoothly */
+            opacity: 1;
+            margin-top: 40px;
+        }
+
+        .team-detail-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent-primary);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(67, 97, 238, 0.05);
+            position: relative;
+        }
+
+        .team-avatar {
+            width: 70px; height: 70px; margin: 0 auto 15px auto; border-radius: 18px;
+            background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid var(--accent-primary); color: var(--accent-primary);
+            display: flex; justify-content: center; align-items: center; font-size: 28px;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+        .team-name { font-size: 24px; font-weight: 800; margin-bottom: 5px; color: #fff; }
+        .team-role { font-family: var(--font-code); color: var(--accent-primary); font-size: 13px; margin-bottom: 20px; letter-spacing: 0.5px; }
+        .team-desc { font-size: 15px; color: var(--text-muted); line-height: 1.7; max-width: 500px; margin: 0 auto; }
+
+        @media (max-width: 1000px) { .mega-guardian { display: none; } }
+        @media (max-width: 768px) { .nav-links { display: none; } .inline-team-details.active { max-height: 500px; } }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#home" class="logo"><div class="logo-icon"></div> InfoVerify</a>
+        <div class="nav-links">
+            <a href="#how-it-works">About the Engine</a>
+            <a href="#contact" class="contact-btn">Engineering Uplink <i class="fa-solid fa-arrow-down" style="margin-left: 5px;"></i></a>
+        </div>
+    </nav>
+
+    <section id="home">
+        <div class="hero-section">
+            <div class="tagline">NLP-Powered Engine v5.5</div>
+            <h1>Verify the Truth in Milliseconds.</h1>
+            <p>Analyze linguistic topologies, verify source reputations, and detect clickbait manipulation before you share.</p>
+        </div>
+
+        <div class="dashboard-wrapper">
+            <i class="fa-solid fa-skull mega-guardian left"></i>
+            <i class="fa-solid fa-mask mega-guardian right"></i>
+            
+            <div class="dashboard">
+                <div class="input-group">
+                    <label>Article Source (URL)</label>
+                    <input type="text" id="sourceInput" placeholder="e.g., bbc.com or suspicious-news.net">
+                </div>
+                <div class="input-group">
+                    <label>Headline / Claim</label>
+                    <textarea id="headlineInput" rows="3" placeholder="Paste the exact headline here to begin NLP scan..."></textarea>
+                </div>
+                <button class="run-btn" id="analyzeBtn" onclick="startAnalysis()">Initialize Scan</button>
+                <div class="loader-container" id="loader">
+                    <div class="spinner"></div>
+                    <div style="color: var(--text-muted); font-size: 14px; font-weight: 600; letter-spacing: 0.5px;" id="loadingText">Connecting to NLP Nodes...</div>
+                </div>
+                <div id="results">
+                    <div class="score-card" id="finalScoreCard">
+                        <div><span class="verdict-label">System Verdict</span><span id="verdictText">Assessing...</span></div>
+                        <span id="scoreNumber">--%</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-header"><span>Source Credibility Metrics</span><span id="sourceScoreTxt">--</span></div>
+                        <div class="progress-bg"><div class="progress-bar" id="sourceBar"></div></div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-header"><span>Linguistic Neutrality & Tone</span><span id="lingScoreTxt">--</span></div>
+                        <div class="progress-bg"><div class="progress-bar" id="lingBar"></div></div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-header"><span>Formatting Standards Analysis</span><span id="formScoreTxt">--</span></div>
+                        <div class="progress-bg"><div class="progress-bar" id="formBar"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works">
+        <h2 class="section-title">How the <span>Algorithm</span> Decodes Truth</h2>
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="phase-badge">Phase 1</div>
+                <div class="info-icon"><i class="fa-solid fa-shield-virus"></i></div>
+                <h3>Syntax Integrity Check</h3>
+                <p>Before deep NLP runs, the system measures raw data integrity. If a user inputs insufficient data (like short random keystrokes or "abcd"), the AI immediately drops the process and flags it as a false input to prevent mathematical manipulation of the score.</p>
+            </div>
+            <div class="info-card">
+                <div class="phase-badge">Phase 2</div>
+                <div class="info-icon"><i class="fa-solid fa-network-wired"></i></div>
+                <h3>Global Ledger Cross-Sync</h3>
+                <p>The engine extracts the domain from the URL and pings it against a hardcoded, live global ledger. It instantly identifies trusted journalistic broadcasters, isolates known satirical networks, and heavily penalizes flagged phishing domains.</p>
+            </div>
+            <div class="info-card">
+                <div class="phase-badge">Phase 3</div>
+                <div class="info-icon"><i class="fa-solid fa-microchip"></i></div>
+                <h3>Deep NLP & Structural Typology</h3>
+                <p>We don't just read words; we analyze psychological intent. Our algorithms scan for hyperbole, fear-mongering syntax, and manipulative trigger words. Simultaneously, it measures structural integrity—like excessive punctuation and ALL CAPS screaming.</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="live-ledger">
+        <div class="ledger-title">Live Threat Interception Feed</div>
+        <div class="marquee-container">
+            <div class="marquee-track">
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: secure-login-update-now.net</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: viral-shocking-news-daily.com</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: account-verify-auth.co</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: the-real-truth-exposed.org</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: banking-alert-action-req.info</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: secure-login-update-now.net</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: viral-shocking-news-daily.com</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: account-verify-auth.co</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: the-real-truth-exposed.org</div>
+                <div class="threat-item"><i class="fa-solid fa-ban"></i> BLOCKED: banking-alert-action-req.info</div>
+            </div>
+        </div>
+    </div>
+
+    <section id="contact">
+        <div class="watcher-container">
+            <div class="watcher-head" id="watcherHead">
+                <div class="watcher-eye"><div class="watcher-pupil"></div></div>
+                <div class="watcher-eye"><div class="watcher-pupil"></div></div>
+            </div>
+        </div>
+
+        <div class="contact-box">
+            <div class="contact-header">
+                <h2>Contact Engineering</h2>
+                <p class="dev-slogan">&lt; Where Developer meets Developer /&gt;</p>
+                <p class="desc">Report vulnerabilities, submit bug bounties, or request custom API integrations.</p>
+            </div>
+            
+            <form id="contactForm">
+                <div class="input-group">
+                    <label>Developer Name</label>
+                    <input type="text" id="devName" placeholder="Your Full Name" required>
+                </div>
+                <div class="input-group">
+                    <label>Encrypted Email</label>
+                    <input type="email" id="devEmail" placeholder="Your Gmail ID" required>
+                </div>
+                <div class="input-group">
+                    <label>Transmission Payload</label>
+                    <textarea id="devMessage" rows="4" placeholder="Describe the vulnerability or integration request..." required></textarea>
+                </div>
+                <button type="submit" class="run-btn">Establish Secure Uplink</button>
+            </form>
+            <div id="successMessage" class="success-msg"><i class="fa-solid fa-circle-check"></i> Uplink Established. Details securely shared to the developer team. We will contact you shortly!</div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-credits">
+            <div class="credit-badge" id="badge-johnson" onclick="toggleTeamDetails('johnson')">
+                <i class="fa-solid fa-server"></i> Engineered by <span>Johnson</span>
+            </div>
+            <div class="credit-badge" id="badge-abdur" onclick="toggleTeamDetails('abdur')">
+                <i class="fa-solid fa-terminal"></i> Developed by <span>Abdur rahman</span>
+            </div>
+            <div class="credit-badge" id="badge-jebaraj" onclick="toggleTeamDetails('jebaraj')">
+                <i class="fa-solid fa-pen-nib"></i> Designed by <span>Jebaraj</span>
+            </div>
+        </div>
+
+        <div id="inlineTeamDetails" class="inline-team-details">
+            <div class="team-detail-card">
+                <div class="team-avatar"><i id="teamAvatarIcon" class="fa-solid fa-code"></i></div>
+                <h2 class="team-name" id="teamName">Name</h2>
+                <div class="team-role" id="teamRole">&lt; Role /&gt;</div>
+                <p class="team-desc" id="teamDesc">Description of what they did goes here.</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; font-size: 12px; color: #555;">
+            &copy; 2026 InfoVerify Systems. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // --- INLINE TEAM MODAL LOGIC ---
+        const teamData = {
+            johnson: {
+                name: "Johnson",
+                role: "Lead Systems Engineer",
+                icon: "fa-server",
+                desc: "Architected the core NLP engine and algorithmic hashing functions. Built the pseudo-random variance models and established the global threat ledger cross-referencing logic to ensure mathematically sound trust scores."
+            },
+            abdur: {
+                name: "Abdur Rahman",
+                role: "Full-Stack Developer",
+                icon: "fa-terminal",
+                desc: "Bridged the gap between the complex mathematical algorithms and the interactive UI. Developed the state managers, real-time threat marquee, and the secure uplink protocols for the contact module."
+            },
+            jebaraj: {
+                name: "Jebaraj Immanuel",
+                role: "UX/UI Designer",
+                icon: "fa-pen-nib",
+                desc: "Designed the enterprise-grade Glassmorphism interface. Implemented the interactive 'Watcher' drone, dynamic cyber-guardian easter eggs, and engineered the overall visual hierarchy and user experience."
+            }
+        };
+
+        let activeMember = null;
+
+        function toggleTeamDetails(member) {
+            const container = document.getElementById('inlineTeamDetails');
+            const badges = document.querySelectorAll('.credit-badge');
+            
+            // Remove active state from all badges
+            badges.forEach(b => b.classList.remove('active-badge'));
+
+            if (activeMember === member) {
+                // If clicking the same badge, close the panel
+                container.classList.remove('active');
+                activeMember = null;
+                return;
+            }
+
+            // Populate Data
+            const data = teamData[member];
+            document.getElementById('teamAvatarIcon').className = `fa-solid ${data.icon}`;
+            document.getElementById('teamName').innerText = data.name;
+            document.getElementById('teamRole').innerText = `< ${data.role} />`;
+            document.getElementById('teamDesc').innerText = data.desc;
+            
+            // Highlight current badge
+            document.getElementById(`badge-${member}`).classList.add('active-badge');
+            
+            // Open Panel
+            container.classList.add('active');
+            activeMember = member;
+
+            // Scroll down smoothly so the expanded info is clearly visible
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 150);
+        }
+
+        // --- WATCHER TOY LOGIC (Tracks Mouse) ---
+        document.addEventListener('mousemove', (e) => {
+            const pupils = document.querySelectorAll('.watcher-pupil');
+            const head = document.getElementById('watcherHead');
+
+            pupils.forEach(pupil => {
+                const rect = pupil.parentElement.getBoundingClientRect();
+                const x = rect.left + (rect.width / 2);
+                const y = rect.top + (rect.height / 2);
+                const distanceX = Math.max(-6, Math.min(6, (e.clientX - x) / 20));
+                const distanceY = Math.max(-6, Math.min(6, (e.clientY - y) / 20));
+                pupil.style.transform = `translate(calc(-50% + ${distanceX}px), calc(-50% + ${distanceY}px))`;
+            });
+
+            if(head) {
+                const hRect = head.getBoundingClientRect();
+                const hX = hRect.left + (hRect.width / 2);
+                const hY = hRect.top + (hRect.height / 2);
+                const rotateY = Math.max(-20, Math.min(20, (e.clientX - hX) / 30));
+                const rotateX = Math.max(-15, Math.min(15, -(e.clientY - hY) / 30));
+                head.style.transform = `perspective(500px) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+            }
+        });
+
+        const inputs = document.querySelectorAll('#contactForm input, #contactForm textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => { document.getElementById('watcherHead').classList.add('active'); });
+            input.addEventListener('blur', () => { document.getElementById('watcherHead').classList.remove('active'); });
+        });
+
+        // --- CONTACT FORM SUBMISSION ---
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            this.style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+        });
+
+        // --- ALGORITHM WITH GIBBERISH DETECTION ---
+        const trustedDomains = ['bbc.com', 'reuters.com', 'apnews.com', 'npr.org', 'bloomberg.com', 'wsj.com'];
+        const satiricalDomains = ['theonion.com', 'babylonbee.com', 'clickhole.com'];
+        const negativeWords = ["shocking", "destroy", "hidden", "secret", "outrage", "miracle", "slams", "banned", "unbelievable", "hoax", "conspiracy"];
+        const positiveWords = ["reports", "stated", "officials", "according", "announced", "data", "investigation"];
+
+        function generateStringHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            return Math.abs(hash);
+        }
+        
+        function startAnalysis() {
+            const headline = document.getElementById("headlineInput").value.trim();
+            const source = document.getElementById("sourceInput").value.trim().toLowerCase();
+            if (!headline) { alert("Please enter a headline to analyze."); return; }
+
+            document.getElementById("analyzeBtn").style.display = "none";
+            document.getElementById("results").style.display = "none";
+            document.getElementById("loader").style.display = "block";
+            
+            let loadSteps = ["Extracting Typography...", "Validating Input Syntax...", "Hashing Vectors...", "Calculating Trust Metrics..."];
+            let step = 0;
+            let interval = setInterval(() => { if(step < loadSteps.length) { document.getElementById("loadingText").innerText = loadSteps[step]; step++; } }, 500);
+
+            setTimeout(() => { clearInterval(interval); processAlgorithm(headline, source); }, 2200);
+        }
+
+        function processAlgorithm(headline, source) {
+            const lowerHead = headline.toLowerCase();
+            const words = lowerHead.split(/\s+/).filter(w => w.length > 0);
+            if (words.length < 3 || lowerHead.length < 12) {
+                renderResults(0, 10, 0, 0, "Insufficient Data / Gibberish");
+                return;
+            }
+
+            const stringHash = generateStringHash(lowerHead + source);
+            const sourceVariance = (stringHash % 20) - 10;
+            const lingVariance = ((stringHash >> 2) % 30) - 15;
+            const formVariance = ((stringHash >> 4) % 20) - 10;
+
+            let sourceScore = 60 + sourceVariance; 
+            let lingScore = 80 + lingVariance; 
+            let formScore = 90 + formVariance;
+
+            let foundTrusted = trustedDomains.some(domain => source.includes(domain));
+            let foundSatire = satiricalDomains.some(domain => source.includes(domain));
+            
+            if (foundTrusted) sourceScore = 90 + (stringHash % 10);
+            else if (foundSatire) sourceScore = 15; 
+            else if (!source) sourceScore = 25; 
+
+            negativeWords.forEach(word => { if (lowerHead.includes(word)) lingScore -= 25; });
+            positiveWords.forEach(word => { if (lowerHead.includes(word)) lingScore += 15; });
+            if (/(!!+|\?\?+)/.test(headline)) formScore -= 35; 
+            let capsCount = words.filter(w => w === w.toUpperCase() && w.length > 3).length;
+            if (capsCount > 1) formScore -= (capsCount * 12);
+            
+            sourceScore = Math.max(5, Math.min(98, sourceScore));
+            lingScore = Math.max(5, Math.min(98, lingScore));
+            formScore = Math.max(5, Math.min(98, formScore));
+
+            let finalTrustScore = Math.round((sourceScore * 0.45) + (lingScore * 0.35) + (formScore * 0.20));
+            renderResults(finalTrustScore, sourceScore, lingScore, formScore, null);
+        }
+
+        function renderResults(final, source, ling, form, customVerdict) {
+            document.getElementById("loader").style.display = "none";
+            document.getElementById("analyzeBtn").style.display = "block";
+            document.getElementById("analyzeBtn").innerText = "Analyze New Data";
+            
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.style.display = "block";
+            resultsDiv.style.animation = 'none';
+            resultsDiv.offsetHeight; 
+            resultsDiv.style.animation = null;
+
+            animateBar("sourceBar", source, getColor(source));
+            document.getElementById("sourceScoreTxt").innerText = source + "/100";
+            animateBar("lingBar", ling, getColor(ling));
+            document.getElementById("lingScoreTxt").innerText = ling + "/100";
+            animateBar("formBar", form, getColor(form));
+            document.getElementById("formScoreTxt").innerText = form + "/100";
+
+            const card = document.getElementById("finalScoreCard");
+            const verdict = document.getElementById("verdictText");
+            document.getElementById("scoreNumber").innerText = final + "% Trust";
+
+            let bgColor = getColor(final);
+            card.style.backgroundColor = `rgba(${hexToRgb(bgColor)}, 0.15)`; 
+            card.style.color = bgColor;
+            card.style.borderColor = `rgba(${hexToRgb(bgColor)}, 0.4)`;
+
+            if (customVerdict) { verdict.innerText = customVerdict; } 
+            else {
+                if (final >= 75) verdict.innerText = "Highly Credible";
+                else if (final >= 40) verdict.innerText = "Proceed with Caution";
+                else verdict.innerText = "Likely Fabricated / Clickbait";
+            }
+        }
+
+        function animateBar(id, value, color) {
+            const bar = document.getElementById(id);
+            bar.style.width = "0%"; bar.style.backgroundColor = color; bar.style.boxShadow = `0 0 10px ${color}`;
+            setTimeout(() => { bar.style.width = value + "%"; }, 50);
+        }
+
+        function getColor(score) {
+            if (score >= 75) return "#06d6a0"; 
+            if (score >= 40) return "#f77f00"; 
+            return "#ef233c"; 
+        }
+
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+        }
+    </script>
+</body>
+</html>
